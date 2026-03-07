@@ -241,3 +241,25 @@ fig2.savefig('features_macro.png', dpi=150)
 plt.close(fig2)
 
 print("\nPlots saved: features_stress.png, features_macro.png")
+
+# ── Section 8: Save panel to disk ────────────────────────────────────────────
+# Standardize all 5 features using train stats only (no leakage).
+# LVIX and GDP_g use only non-null train rows for mean/std.
+panel = panel.copy()
+
+# Core 3: already have z_mean/z_std from train
+for col in features:
+    panel[f'{col}_z'] = (panel[col] - z_mean[col]) / z_std[col]
+
+# LVIX and GDP_g: compute train stats on non-null rows only
+for col in ['LVIX', 'GDP_g']:
+    train_vals = train[col].dropna()
+    col_mean   = train_vals.mean()
+    col_std    = train_vals.std()
+    panel[f'{col}_z'] = (panel[col] - col_mean) / col_std
+
+# Save full panel including raw and standardized features.
+# Load in hmm_model.py with: pd.read_parquet('data/panel.parquet')
+panel.to_parquet('data/panel.parquet', index=False)
+print(f"Panel saved to data/panel.parquet  ({len(panel)} rows)")
+print(f"Columns: {panel.columns.tolist()}")
